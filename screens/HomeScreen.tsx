@@ -1,23 +1,31 @@
 import React, { useState } from "react";
 import { getAddressInfo, getTransactions } from "../lib/api";
 import { AddressInfo, Transaction } from "../lib/type";
+import { useSendTransaction, useAccount } from "wagmi";
 import Link from "next/link";
+import { parseEther } from "viem";
+
 const HomeScreen: React.FC = () => {
   const [searchAddress, setSearchAddress] = useState<string>("");
   const [transferAddress, setTransferAddress] = useState<string>("");
-  const [token, setToken] = useState<string>("");
+  const [token, setToken] = useState<string>("ETH");
   const [amount, setAmount] = useState<string>("");
   const [transferVisible, setTransferVisible] = useState<boolean>(false);
   const [addressInfo, setAddressInfo] = useState<AddressInfo | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { data: hash, sendTransaction, isPending } = useSendTransaction();
+  const userAccount = useAccount();
+
+  const fillMyAddressInSearch = () => {
+    const { address } = userAccount;
+    setSearchAddress(address as string);
+  };
 
   const handleTransfer = () => {
-    console.log({
-      step: "transfer",
-      from: searchAddress,
-      to: transferAddress,
-      token: token,
-    });
+    if (!transferAddress || !token || !amount) return;
+    const to = transferAddress as `0x${string}`;
+    const value = amount;
+    sendTransaction({ to, value: parseEther(value) });
   };
 
   const handleSearch = async () => {
@@ -48,6 +56,14 @@ const HomeScreen: React.FC = () => {
         />
         <button
           onClick={() => {
+            fillMyAddressInSearch();
+          }}
+          className="mt-4 bg-custom-blue text-white p-2 rounded-md"
+        >
+          Fill my address
+        </button>
+        <button
+          onClick={() => {
             handleSearch();
           }}
           className="mt-4 bg-custom-blue text-white p-2 rounded-md"
@@ -57,50 +73,60 @@ const HomeScreen: React.FC = () => {
       </div>
       <div className="flex w-full justify-center">
         {transferVisible ? (
-          <div className="gap-x-2 flex">
-            <input
-              type="string"
-              value={amount}
-              onChange={(e) => {
-                setAmount(e.target.value);
-              }}
-              className="mt-4 p-2 border border-gray-300 rounded-md w-24"
-              placeholder="Amount"
-            />
-            <select
-              value={token}
-              onChange={(e) => {
-                setToken(e.target.value);
-              }}
-              className="mt-4 p-2 border border-gray-300 rounded-md w-24"
-            >
-              <option value="0">Token</option>
-            </select>
-            <input
-              type="text"
-              value={searchAddress}
-              onChange={(e) => {
-                setTransferAddress(e.target.value);
-              }}
-              className="mt-4 p-2 border border-gray-300 rounded-md w-[30rem]"
-              placeholder="Tranfer to"
-            />
-            <button
-              onClick={() => {
-                handleTransfer();
-              }}
-              className="mt-4 bg-custom-blue text-white p-2 rounded-md"
-            >
-              Transfer
-            </button>
-            <button
-              onClick={() => {
-                setTransferVisible(false);
-              }}
-              className="mt-4 bg-red-500 text-white p-2 rounded-md"
-            >
-              Close
-            </button>
+          <div className="flex flex-col items-center justify-center">
+            <div className="gap-x-2 flex">
+              <input
+                type="string"
+                value={amount}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                }}
+                className="mt-4 p-2 border border-gray-300 rounded-md w-24"
+                placeholder="Amount"
+              />
+              <select
+                value={token}
+                onChange={(e) => {
+                  setToken(e.target.value);
+                }}
+                className="mt-4 p-2 border border-gray-300 rounded-md w-24"
+              >
+                <option value="ETH">ETH</option>
+              </select>
+              <input
+                type="text"
+                value={transferAddress}
+                onChange={(e) => {
+                  setTransferAddress(e.target.value);
+                }}
+                className="mt-4 p-2 border border-gray-300 rounded-md w-[30rem]"
+                placeholder="Tranfer to"
+              />
+              <button
+                disabled={isPending}
+                onClick={() => {
+                  handleTransfer();
+                }}
+                className="mt-4 bg-custom-blue text-white p-2 rounded-md"
+              >
+                {isPending ? "Confirming..." : "Transfer"}
+              </button>
+              <button
+                onClick={() => {
+                  setTransferVisible(false);
+                }}
+                className="mt-4 bg-red-500 text-white p-2 rounded-md"
+              >
+                Close
+              </button>
+            </div>
+            {hash && (
+              <div className="mt-2">
+                <Link target="_blank" className="text-blue-500 underline" href={`https://eth-sepolia.blockscout.com/tx/${hash}`}>
+                  Open transaction
+                </Link>
+              </div>
+            )}
           </div>
         ) : (
           <button

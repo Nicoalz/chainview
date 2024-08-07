@@ -68,7 +68,7 @@ const Header: React.FC = () => {
           ))}
         </nav>
 
-        <ConnectButton showBalance={false} chainStatus="icon" accountStatus="address" />
+        <ConnectButton showBalance={true} chainStatus="full" accountStatus="full" />
         <button
           className="sm:hidden z-50 ml-4" // Button is only visible on mobile
           onClick={() => {
